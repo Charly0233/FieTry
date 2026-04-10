@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<title>FIE — Tu Asesor Financiero</title>
+
+<link rel="manifest" href="manifest.json"/>
+<meta name="theme-color" content="#19485C"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="FIE"/>
+<meta name="application-name" content="FIE"/>
+<meta name="description" content="Tu app personal de finanzas con asesor inteligente."/>
+<link rel="apple-touch-icon" href="icons/icon-192.png"/>
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png"/>
+<link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,500;0,9..40,700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet"/>
+
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#111820;--screen:#19485C;--card:#1e3f50;--card2:#1a3a4a;
+  --border:#2a4f60;--accent:#3B8988;--gold:#DBCBBC;--red:#535E7A;
+  --green:#78A082;--teal:#DBCBBC;--text:#DBCBBC;--muted:#8faaaa;--dim:#4a7a80;
+}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--screen)}
+body{font-family:'DM Sans',sans-serif;display:flex;flex-direction:column}
+.app{position:fixed;inset:0;width:100%;height:100%;background:var(--screen);display:flex;flex-direction:column;overflow:hidden}
+.screen{display:none;width:100%;height:100%;overflow:hidden;flex-direction:column}
+.screen.active{display:flex}
+.status-bar{display:flex;justify-content:space-between;align-items:center;padding:max(env(safe-area-inset-top,14px),14px) 24px 10px;font-size:12px;color:var(--text);font-weight:600;flex-shrink:0}
+.status-icons{display:flex;gap:5px;align-items:center;font-size:11px}
+.bottom-nav{flex-shrink:0;height:calc(68px + env(safe-area-inset-bottom,0px));background:var(--card);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-around;padding:0 8px calc(8px + env(safe-area-inset-bottom,0px))}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;opacity:0.4;transition:opacity 0.2s;font-size:9px;color:var(--text);letter-spacing:0.3px;user-select:none}
+.nav-item.active{opacity:1}
+.nav-icon{font-size:20px}
+.nav-dot{width:4px;height:4px;border-radius:50%;background:var(--teal);opacity:0;transition:opacity 0.2s}
+.nav-item.active .nav-dot{opacity:1}
+.inner-scroll{flex:1;overflow-y:auto;padding:14px 20px 16px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.inner-scroll::-webkit-scrollbar{display:none}
+.back-btn{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:13px;cursor:pointer;margin-bottom:18px;width:fit-content;transition:color 0.2s;user-select:none}
+.back-btn:hover{color:var(--text)}
+.back-arrow{width:28px;height:28px;background:var(--card2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--text)}
+/* HOME */
+.home-scroll{flex:1;overflow-y:auto;padding:18px 20px 16px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.home-scroll::-webkit-scrollbar{display:none}
+.app-brand{font-family:'DM Serif Display',serif;font-size:42px;font-weight:400;color:var(--teal);letter-spacing:6px;margin-bottom:12px}
+.greeting{font-size:11px;color:var(--muted);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:3px}
+.welcome-title{font-family:'DM Serif Display',serif;font-size:28px;color:var(--text);line-height:1.2;margin-bottom:28px}
+.welcome-title span{color:var(--teal)}
+.menu-card{display:flex;align-items:center;gap:16px;background:var(--card2);border:1px solid var(--border);padding:18px 16px;margin-bottom:12px;cursor:pointer;position:relative;overflow:hidden;transition:transform 0.2s;animation:slideUp 0.4s both;user-select:none}
+.menu-card:active{transform:scale(0.97)}
+.card-icon{width:50px;height:50px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
+.bank .card-icon{background:rgba(59,137,136,0.15)}
+.edu .card-icon{background:rgba(219,203,188,0.1)}
+.news .card-icon{background:rgba(83,94,122,0.15)}
+.card-info h3{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--text);margin-bottom:2px}
+.card-info p{font-size:12px;color:var(--muted)}
+.card-arrow{margin-left:auto;font-size:18px;color:var(--dim)}
+@keyframes slideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+/* BANK */
+.balance-card{background:linear-gradient(135deg,#3B8988 0%,#19485C 100%);padding:24px;margin-bottom:20px;position:relative;overflow:hidden}
+.balance-label{font-size:11px;color:rgba(219,203,188,0.6);font-weight:600;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px}
+.balance-amount{font-family:'Syne',sans-serif;font-size:36px;font-weight:800;color:#DBCBBC;line-height:1;margin-bottom:18px}
+.card-number{font-size:12px;color:rgba(219,203,188,0.5);letter-spacing:0.15em;font-weight:500}
+.section-title{font-family:'DM Serif Display',serif;font-size:16px;color:var(--text);margin-bottom:12px}
+.actions-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:22px}
+.action-btn{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;user-select:none}
+.action-circle{width:50px;height:50px;background:var(--card2);display:flex;align-items:center;justify-content:center;font-size:20px;border:1px solid var(--border)}
+.action-label{font-size:10px;color:var(--muted);text-align:center;line-height:1.2}
+.tx-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+.tx-item:last-child{border-bottom:none}
+.tx-icon{width:40px;height:40px;background:var(--card2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;border:1px solid var(--border)}
+.tx-info{flex:1}
+.tx-name{font-size:13px;font-weight:500;color:var(--text);margin-bottom:2px}
+.tx-date{font-size:11px;color:var(--muted)}
+.tx-amount{font-family:'Syne',sans-serif;font-size:14px;font-weight:700}
+.tx-amount.neg{color:#535E7A}
+.tx-amount.pos{color:var(--teal)}
+/* EDU / AI */
+.edu-profile-card{background:linear-gradient(135deg,#1a3a4a 0%,#19485C 100%);border:1px solid #3B8988;padding:16px;margin-bottom:18px}
+.edu-profile-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px}
+.edu-profile-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:3px}
+.edu-profile-name{font-family:'DM Serif Display',serif;font-size:18px;color:var(--text)}
+.edu-profile-badge{font-size:10px;font-weight:700;background:rgba(59,137,136,0.2);color:#3B8988;padding:4px 9px;border:1px solid #3B8988}
+.edu-profile-stats{display:flex;align-items:center}
+.edu-stat{flex:1;text-align:center}
+.edu-stat-val{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--text);margin-bottom:2px}
+.edu-stat-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em}
+.edu-stat-divider{width:1px;height:32px;background:var(--border)}
+.edu-section-title{font-family:'DM Serif Display',serif;font-size:16px;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:7px}
+.ai-chat-box{display:flex;flex-direction:column;gap:10px;margin-bottom:14px;min-height:60px}
+.ai-msg{display:flex;gap:8px;align-items:flex-start;animation:slideUp 0.3s both}
+.ai-msg.user{flex-direction:row-reverse}
+.user-av{width:28px;height:28px;flex-shrink:0;background:rgba(83,94,122,0.2);border:1px solid #535E7A;display:flex;align-items:center;justify-content:center;font-size:13px}
+.fie-bot{width:28px;height:28px;flex-shrink:0}
+.fie-bot svg{width:28px;height:28px}
+.ai-bubble{max-width:82%;padding:10px 12px;background:var(--card2);border:1px solid var(--border);font-size:12px;color:var(--text);line-height:1.55;border-radius:2px}
+.ai-bubble.user{background:rgba(59,137,136,0.15);border-color:rgba(59,137,136,0.4)}
+.ai-bubble strong{color:#DBCBBC}
+.ai-typing{display:flex;gap:4px;align-items:center;padding:4px 2px}
+.ai-typing span{width:6px;height:6px;background:var(--muted);border-radius:50%;animation:typingDot 1.2s infinite}
+.ai-typing span:nth-child(2){animation-delay:0.2s}
+.ai-typing span:nth-child(3){animation-delay:0.4s}
+@keyframes typingDot{0%,60%,100%{opacity:0.3;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
+.ai-chips-label{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:7px}
+.ai-chips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px}
+.ai-chip{font-size:11px;padding:6px 10px;background:var(--card2);border:1px solid var(--border);color:var(--muted);cursor:pointer;transition:all 0.2s;white-space:nowrap;user-select:none}
+.ai-chip:hover,.ai-chip:active{border-color:#3B8988;color:var(--text);background:rgba(59,137,136,0.1)}
+.ai-input-row{display:flex;gap:8px;align-items:center;margin-bottom:6px}
+.ai-input{flex:1;background:var(--card2);border:1px solid var(--border);padding:10px 12px;font-size:12px;color:var(--text);font-family:'DM Sans',sans-serif;outline:none;transition:border-color 0.2s;border-radius:2px;-webkit-appearance:none}
+.ai-input:focus{border-color:#3B8988}
+.ai-input::placeholder{color:var(--dim)}
+.ai-send-btn{width:40px;height:40px;flex-shrink:0;background:#3B8988;border:none;color:#DBCBBC;font-size:15px;cursor:pointer;transition:background 0.2s;display:flex;align-items:center;justify-content:center;border-radius:2px}
+.ai-send-btn:active{background:#2a7877}
+.ai-send-btn:disabled{background:var(--card2);color:var(--dim);cursor:not-allowed}
+.ai-input-hint{font-size:10px;color:var(--dim);text-align:center;margin-top:4px}
+/* FEED */
+.top-bar{display:flex;align-items:center;justify-content:space-between;padding:14px 20px 12px;flex-shrink:0}
+.app-title{font-family:'DM Serif Display',serif;font-size:26px;color:var(--text);letter-spacing:-0.5px}
+.app-sub{font-size:10px;color:var(--dim);letter-spacing:1.2px;text-transform:uppercase;margin-top:1px}
+.cat-tabs{display:flex;padding:0 20px;border-bottom:1px solid var(--border);flex-shrink:0}
+.cat-tab{padding:9px 0;margin-right:18px;font-size:11px;font-weight:600;color:var(--dim);cursor:pointer;border-bottom:2px solid transparent;transition:all 0.2s;user-select:none}
+.cat-tab.active-tab{color:var(--accent);border-bottom-color:var(--accent)}
+.stats-bar{padding:7px 20px;font-size:10px;color:var(--dim);letter-spacing:0.8px;text-transform:uppercase;flex-shrink:0}
+.news-list{flex:1;overflow-y:auto;padding:4px 0 16px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.news-list::-webkit-scrollbar{display:none}
+.article-card{display:flex;background:var(--card2);margin:0 14px 9px;overflow:hidden;cursor:pointer}
+.article-card.hidden{display:none}
+.card-accent{width:4px;flex-shrink:0}
+.card-body{flex:1;padding:12px 13px}
+.card-header{display:flex;justify-content:space-between;margin-bottom:4px}
+.card-source{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px}
+.card-date{font-size:10px;color:var(--dim)}
+.card-title{font-size:13px;font-weight:700;color:var(--text);line-height:1.4;margin-bottom:4px}
+.card-summary{font-size:11px;color:#8faaaa;line-height:1.5;margin-bottom:8px}
+.card-footer{display:flex;align-items:center;justify-content:space-between}
+.card-badge{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;padding:3px 7px}
+.card-relevance{font-size:10px;color:var(--dim)}
+.empty-state{display:none;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;color:var(--dim);font-size:13px;gap:8px}
+.empty-state.visible{display:flex}
+/* BOT ANIMATIONS */
+@keyframes blink{0%,92%,100%{transform:scaleY(1)}95%{transform:scaleY(0.08)}}
+@keyframes happySquint{0%,100%{transform:scaleY(1)}20%,80%{transform:scaleY(0.25)}}
+@keyframes thinkTilt{0%,100%{transform:rotate(0deg)}30%{transform:rotate(-6deg)}70%{transform:rotate(4deg)}}
+@keyframes typingBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
+@keyframes pupilWander{0%,100%{transform:translate(0,0)}25%{transform:translate(1px,-1px)}50%{transform:translate(-1px,0.5px)}75%{transform:translate(0.5px,1px)}}
+/* ONBOARDING */
+#welcome-screen{position:fixed;inset:0;z-index:1000;background:#111820;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 28px;animation:fadeIn 0.5s both}
+#ob-overlay{position:fixed;inset:0;z-index:900;display:none}
+#ob-backdrop{position:absolute;inset:0;background:rgba(0,0,0,0.8);pointer-events:all}
+#ob-spotlight{position:absolute;border:2px solid #3B8988;box-shadow:0 0 0 9999px rgba(0,0,0,0.8);border-radius:4px;transition:all 0.5s cubic-bezier(0.34,1.2,0.64,1);pointer-events:none;opacity:0}
+#ob-card{position:absolute;bottom:0;left:0;right:0;z-index:10;background:#1a3a4a;border-top:2px solid #3B8988;padding:22px 22px calc(28px + env(safe-area-inset-bottom,0px));pointer-events:all}
+.ob-dot{width:7px;height:7px;border-radius:50%;background:var(--border);transition:background 0.3s;flex-shrink:0}
+.ob-dot.active{background:#3B8988}
+/* INSTALL BANNER */
+#install-banner{display:none;position:fixed;bottom:calc(88px + env(safe-area-inset-bottom,0px));left:12px;right:12px;z-index:800;background:#1a3a4a;border:1px solid rgba(59,137,136,0.5);padding:12px 14px;align-items:center;gap:12px;animation:slideUp 0.4s both}
+#install-banner .banner-install{background:#3B8988;color:#DBCBBC;border:none;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap;flex-shrink:0}
+#install-banner .banner-close{font-size:18px;color:#8faaaa;cursor:pointer;flex-shrink:0;padding:2px 4px}
+/* OFFLINE */
+#offline-bar{display:none;background:rgba(83,94,122,0.95);color:white;font-size:11px;font-weight:600;text-align:center;padding:8px;position:fixed;top:0;left:0;right:0;z-index:9999;letter-spacing:0.5px}
+body.offline #offline-bar{display:block}
+</style>
+</head>
+<body>
+
+<div id="offline-bar">📵 Sin conexión — mostrando datos guardados</div>
+
+<div class="app" id="app">
+
+  <!-- ══ HOME ══ -->
+  <div class="screen active" id="screen-home">
+    <div class="status-bar"><span id="clock">9:41</span><div class="status-icons"><span>▲▲▲</span><span>WiFi</span><span>🔋</span></div></div>
+    <div class="home-scroll">
+      <h1 class="app-brand">FIE</h1>
+      <p class="greeting">Buenos días</p>
+      <h1 class="welcome-title">Bienvenido<br><span>de vuelta 👋</span></h1>
+      <div class="menu-card bank" id="mc-bank" onclick="go('bank')" style="animation-delay:0.05s">
+        <div class="card-icon">🏦</div>
+        <div class="card-info"><h3>Cuenta Bancaria</h3><p>Saldo, movimientos y más</p></div>
+        <div class="card-arrow">›</div>
+      </div>
+      <div class="menu-card edu" id="mc-edu" onclick="go('edu')" style="animation-delay:0.13s">
+        <div class="card-icon">🎓</div>
+        <div class="card-info"><h3>Educación</h3><p>Asesor financiero con IA</p></div>
+        <div class="card-arrow">›</div>
+      </div>
+      <div class="menu-card news" id="mc-news" onclick="go('feed')" style="animation-delay:0.21s">
+        <div class="card-icon">📰</div>
+        <div class="card-info"><h3>EcoNews</h3><p>Tasas, crédito y economía</p></div>
+        <div class="card-arrow">›</div>
+      </div>
+    </div>
+    <div class="bottom-nav" id="home-nav">
+      <div class="nav-item active" onclick="go('home')"><div class="nav-icon">🏠</div><span>Inicio</span><div class="nav-dot"></div></div>
+      <div class="nav-item" onclick="go('bank')"><div class="nav-icon">💳</div><span>Cuenta</span><div class="nav-dot"></div></div>
+      <div class="nav-item" onclick="go('edu')"><div class="nav-icon">🎓</div><span>Aprende</span><div class="nav-dot"></div></div>
+      <div class="nav-item" onclick="go('feed')"><div class="nav-icon">📰</div><span>Noticias</span><div class="nav-dot"></div></div>
+    </div>
+  </div>
+
+  <!-- ══ BANK ══ -->
+  <div class="screen" id="screen-bank">
+    <div class="status-bar"><span id="clock2">9:41</span><div class="status-icons"><span>▲▲▲</span><span>WiFi</span><span>🔋</span></div></div>
+    <div class="inner-scroll">
+      <div class="back-btn" onclick="go('home')"><div class="back-arrow">←</div> Inicio</div>
+      <div class="balance-card" id="ob-balance">
+        <div class="balance-label">Saldo disponible</div>
+        <div class="balance-amount"><sup style="font-size:20px">$</sup>47,382<span style="font-size:20px">.50</span></div>
+        <div class="card-number">•••• •••• •••• 4821</div>
+      </div>
+      <div class="section-title">Acciones rápidas</div>
+      <div class="actions-grid" id="ob-actions">
+        <div class="action-btn"><div class="action-circle">↑</div><span class="action-label">Enviar</span></div>
+        <div class="action-btn"><div class="action-circle">↓</div><span class="action-label">Recibir</span></div>
+        <div class="action-btn"><div class="action-circle">💳</div><span class="action-label">Tarjeta</span></div>
+        <div class="action-btn"><div class="action-circle">📱</div><span class="action-label">SPEI</span></div>
+        <div class="action-btn"><div class="action-circle">📄</div><span class="action-label">Estado</span></div>
+        <div class="action-btn"><div class="action-circle">🔒</div><span class="action-label">Bloquear</span></div>
+        <div class="action-btn"><div class="action-circle">💰</div><span class="action-label">Ahorro</span></div>
+        <div class="action-btn"><div class="action-circle">⚙️</div><span class="action-label">Ajustes</span></div>
+      </div>
+      <div class="section-title">Últimos movimientos</div>
+      <div id="ob-txlist">
+        <div class="tx-item"><div class="tx-icon">🛒</div><div class="tx-info"><div class="tx-name">Walmart México</div><div class="tx-date">Hoy, 10:24 AM</div></div><div class="tx-amount neg">-$843.00</div></div>
+        <div class="tx-item"><div class="tx-icon">💼</div><div class="tx-info"><div class="tx-name">Nómina Empresa</div><div class="tx-date">Ayer, 8:00 AM</div></div><div class="tx-amount pos">+$18,500.00</div></div>
+        <div class="tx-item"><div class="tx-icon">⚡</div><div class="tx-info"><div class="tx-name">CFE Luz</div><div class="tx-date">18 feb, 3:12 PM</div></div><div class="tx-amount neg">-$364.00</div></div>
+        <div class="tx-item"><div class="tx-icon">🍕</div><div class="tx-info"><div class="tx-name">Rappi</div><div class="tx-date">17 feb, 9:40 PM</div></div><div class="tx-amount neg">-$230.00</div></div>
+        <div class="tx-item"><div class="tx-icon">📲</div><div class="tx-info"><div class="tx-name">Transferencia recibida</div><div class="tx-date">16 feb, 6:05 PM</div></div><div class="tx-amount pos">+$2,000.00</div></div>
+      </div>
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-item" onclick="go('home')"><div class="nav-icon">🏠</div><span>Inicio</span><div class="nav-dot"></div></div>
+      <div class="nav-item active" onclick="go('bank')"><div class="nav-icon">💳</div><span>Cuenta</span><div class="nav-dot"></div></div>
+      <div class="nav-item" onclick="go('edu')"><div class="nav-icon">🎓</div><span>Aprende</span><div class="nav-dot"></div></div>
+      <div class="nav-item" onclick="go('feed')"><div class="nav-icon">📰</div><span>Noticias</span><div class="nav-dot"></div></div>
+    </div>
+  </div>
+
+  <!-- ══ EDU / AI ADVISOR ══ -->
+  <div class="screen" id="screen-edu">
+    <div class="status-bar"><span id="clock3">9:41</span><div class="status-icons"><span>▲▲▲</span><span>WiFi</span><span>🔋</span></div></div>
+    <div class="inner-scroll" id="edu-scroll">
+      <div class="back-btn" onclick="go('home')"><div class="back-arrow">←</div> Inicio</div>
+      <div class="edu-profile-card">
+        <div class="edu-profile-top">
+          <div><div class="edu-profile-label">Tu perfil financiero</div><div class="edu-profile-name">Usuario FIE</div></div>
+          <div class="edu-profile-badge">💡 Activo</div>
+        </div>
+        <div class="edu-profile-stats">
+          <div class="edu-stat"><div class="edu-stat-val">$47,382</div><div class="edu-stat-lbl">Saldo</div></div>
+          <div class="edu-stat-divider"></div>
+          <div class="edu-stat"><div class="edu-stat-val">$18,500</div><div class="edu-stat-lbl">Ingresos</div></div>
+          <div class="edu-stat-divider"></div>
+          <div class="edu-stat"><div class="edu-stat-val">$1,437</div><div class="edu-stat-lbl">Gastos</div></div>
+        </div>
+      </div>
+      <div class="edu-section-title" id="ob-advisor-title">🤖 Asesor Personalizado</div>
+      <div class="ai-chat-box" id="ai-chat-box"></div>
+      <div class="ai-chips-label" id="chips-label">Sugerencias para empezar:</div>
+      <div class="ai-chips" id="ai-chips">
+        <div class="ai-chip" onclick="sendChip(this,'¿Cómo puedo invertir mi dinero sobrante?')">💰 Invertir sobrante</div>
+        <div class="ai-chip" onclick="sendChip(this,'¿Cómo puedo ahorrar más cada mes?')">🏦 Ahorrar más</div>
+        <div class="ai-chip" onclick="sendChip(this,'Quiero crear una meta de ahorro')">🎯 Meta de ahorro</div>
+        <div class="ai-chip" onclick="sendChip(this,'¿Estoy gastando demasiado?')">📊 Analizar gastos</div>
+        <div class="ai-chip" onclick="sendChip(this,'¿Cómo hago crecer mi patrimonio?')">📈 Crecer patrimonio</div>
+        <div class="ai-chip" onclick="sendChip(this,'¿Qué riesgos tengo con mi perfil?')">⚠️ Ver riesgos</div>
+      </div>
+      <div class="ai-input-row" id="ob-input-row">
+        <input class="ai-input" id="ai-input" type="text" placeholder="Escribe cualquier pregunta…" onkeydown="if(event.key==='Enter')sendMessage()"/>
+        <button class="ai-send-btn" id="ai-send-btn" onclick="sendMessage()">➤</button>
+      </div>
+      <div class="ai-input-hint">Puedes preguntarme cualquier cosa sobre tus finanzas.</div>
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-item" onclick="go('home')"><div class="nav-icon">🏠</div><span>Inicio</span><div class="nav-dot"></div></div>
+      <div class="nav-item" onclick="go('bank')"><div class="nav-icon">💳</div><span>Cuenta</span><div class="nav-dot"></div></div>
+      <div class="nav-item active" onclick="go('edu')"><div class="nav-icon">🎓</div><span>Aprende</span><div class="nav-dot"></div></div>
+      <div class="nav-item" onclick="go('feed')"><div class="nav-icon">📰</div><span>Noticias</span><div class="nav-dot"></div></div>
+    </div>
+  </div>
+
+  <!-- ══ FEED ══ -->
+  <div class="screen" id="screen-feed">
+    <div class="status-bar"><span id="clock4">9:41</span><div class="status-icons"><span>▲▲▲</span><span>WiFi</span><span>🔋</span></div></div>
+    <div class="top-bar"><div><div class="app-title">EcoNews</div><div class="app-sub">Crédito · Tasas · Economía</div></div></div>
+    <div class="cat-tabs" id="ob-cattabs">
+      <div class="cat-tab active-tab" data-cat="all" onclick="filterCat('all')">Todo</div>
+      <div class="cat-tab" data-cat="rates" onclick="filterCat('rates')">Tasas</div>
+      <div class="cat-tab" data-cat="credit" onclick="filterCat('credit')">Crédito</div>
+      <div class="cat-tab" data-cat="economy" onclick="filterCat('economy')">Economía</div>
+    </div>
+    <div class="stats-bar" id="stats-bar">4 artículos · ordenados por relevancia local</div>
+    <div class="news-list" id="news-list">
+      <div class="article-card" data-cat="rates"><div class="card-accent" style="background:#DBCBBC"></div><div class="card-body"><div class="card-header"><span class="card-source">Federal Reserve</span><span class="card-date">15 ene 2025</span></div><div class="card-title">La Fed Mantiene las Tasas, Señala Dos Recortes Posibles en 2025</div><div class="card-summary">El FOMC votó mantener la tasa en 5.25–5.5%, citando inflación persistente y sólido mercado laboral.</div><div class="card-footer"><span class="card-badge" style="background:rgba(219,203,188,0.15);color:#DBCBBC">Tasas</span><span class="card-relevance">Relevancia ●●●●●</span></div></div></div>
+      <div class="article-card" data-cat="economy"><div class="card-accent" style="background:#78A082"></div><div class="card-body"><div class="card-header"><span class="card-source">WSJ Economy</span><span class="card-date">15 ene 2025</span></div><div class="card-title">El PIB de México Supera el Promedio Nacional por Tercer Trimestre</div><div class="card-summary">El sector energético y la migración tecnológica impulsan la expansión económica del estado.</div><div class="card-footer"><span class="card-badge" style="background:rgba(120,160,130,0.15);color:#78A082">Economía</span><span class="card-relevance">Relevancia ●●●●○</span></div></div></div>
+      <div class="article-card" data-cat="credit"><div class="card-accent" style="background:#535E7A"></div><div class="card-body"><div class="card-header"><span class="card-source">Reuters Business</span><span class="card-date">14 ene 2025</span></div><div class="card-title">El Crédito al Consumidor en EE.UU. Sube $17.8B en Noviembre</div><div class="card-summary">El crédito revolvente superó expectativas, generando dudas sobre finanzas familiares de cara a 2025.</div><div class="card-footer"><span class="card-badge" style="background:rgba(83,94,122,0.15);color:#535E7A">Crédito</span><span class="card-relevance">Relevancia ●●●○○</span></div></div></div>
+      <div class="article-card" data-cat="economy"><div class="card-accent" style="background:#78A082"></div><div class="card-body"><div class="card-header"><span class="card-source">CNBC Economy</span><span class="card-date">14 ene 2025</span></div><div class="card-title">El IPC Sube 0.2% en Diciembre, Inflación Subyacente en 3.3%</div><div class="card-summary">Los costos de vivienda siguen presionando la inflación, complicando el camino de la Fed al 2%.</div><div class="card-footer"><span class="card-badge" style="background:rgba(120,160,130,0.15);color:#78A082">Economía</span><span class="card-relevance">Relevancia ●●●○○</span></div></div></div>
+      <div class="empty-state" id="empty-state"><span style="font-size:34px">📭</span><span>Sin artículos en esta categoría</span></div>
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-item" onclick="go('home')"><div class="nav-icon">🏠</div><span>Inicio</span><div class="nav-dot"></div></div>
+      <div class="nav-item" onclick="go('bank')"><div class="nav-icon">💳</div><span>Cuenta</span><div class="nav-dot"></div></div>
+      <div class="nav-item" onclick="go('edu')"><div class="nav-icon">🎓</div><span>Aprende</span><div class="nav-dot"></div></div>
+      <div class="nav-item active" onclick="go('feed')"><div class="nav-icon">📰</div><span>Noticias</span><div class="nav-dot"></div></div>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<!-- ══ WELCOME SCREEN ══ -->
+<div id="welcome-screen">
+  <div style="font-family:'DM Serif Display',serif;font-size:52px;color:#DBCBBC;letter-spacing:8px;margin-bottom:6px">FIE</div>
+  <div style="font-size:11px;color:#4a7a80;letter-spacing:3px;text-transform:uppercase;margin-bottom:44px">Tu asesor financiero</div>
+  <div id="welcome-bot" style="width:72px;height:72px;margin-bottom:26px"></div>
+  <div style="font-family:'DM Serif Display',serif;font-size:22px;color:#DBCBBC;text-align:center;margin-bottom:10px;line-height:1.35">¡Bienvenido a FIE!</div>
+  <div style="font-size:13px;color:#8faaaa;text-align:center;line-height:1.75;margin-bottom:40px;max-width:300px">Tu app personal de finanzas con asesor inteligente.<br>¿Te gustaría conocer cómo funciona?</div>
+  <button onclick="startTutorial()" style="background:#3B8988;border:none;color:#DBCBBC;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;padding:14px 0;cursor:pointer;width:100%;max-width:300px;margin-bottom:14px;letter-spacing:0.3px">Ver tutorial rápido →</button>
+  <div onclick="finishOnboarding()" style="font-size:12px;color:#4a7a80;cursor:pointer;padding:10px;user-select:none">No, entrar directo</div>
+</div>
+
+<!-- ══ ONBOARDING OVERLAY ══ -->
+<div id="ob-overlay">
+  <div id="ob-backdrop" onclick="nextStep()"></div>
+  <div id="ob-spotlight"></div>
+  <div id="ob-card">
+    <div id="ob-dots" style="display:flex;gap:6px;margin-bottom:16px"></div>
+    <div style="display:flex;align-items:flex-start;gap:14px;margin-bottom:20px">
+      <div id="ob-bot" style="width:44px;height:44px;flex-shrink:0"></div>
+      <div style="flex:1">
+        <div id="ob-title" style="font-family:'DM Serif Display',serif;font-size:18px;color:#DBCBBC;margin-bottom:7px;line-height:1.3"></div>
+        <div id="ob-body" style="font-size:12px;color:#8faaaa;line-height:1.7"></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <div onclick="finishOnboarding()" style="font-size:11px;color:#4a7a80;cursor:pointer;padding:4px 0;flex:1;user-select:none">Saltar</div>
+      <button id="ob-btn" onclick="nextStep()" style="background:#3B8988;border:none;color:#DBCBBC;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;padding:11px 24px;cursor:pointer;letter-spacing:0.3px">Siguiente →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ INSTALL BANNER ══ -->
+<div id="install-banner">
+  <div style="font-size:24px;flex-shrink:0">📲</div>
+  <div style="flex:1">
+    <div style="font-size:13px;font-weight:700;color:#DBCBBC;margin-bottom:2px">Instalar FIE</div>
+    <div style="font-size:11px;color:#8faaaa">Añadir a pantalla de inicio</div>
+  </div>
+  <button class="banner-install" id="install-btn-action">Instalar</button>
+  <span class="banner-close" onclick="document.getElementById('install-banner').style.display='none'">✕</span>
+</div>
+
+<script>
+// ── Live clock ──
+function updateClock(){
+  const now=new Date();
+  const t=now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
+  ['clock','clock2','clock3','clock4'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=t;});
+}
+updateClock();setInterval(updateClock,30000);
+
+// ── Bot SVG ──
+function botSVG(mood,size){
+  size=size||28;
+  const eyeS={idle:'animation:blink 4s ease-in-out infinite',happy:'animation:happySquint 1.2s ease-in-out infinite',thinking:'animation:blink 6s ease-in-out infinite',typing:'animation:blink 2.5s ease-in-out infinite'}[mood]||'animation:blink 3s ease-in-out infinite';
+  const faceS={thinking:'animation:thinkTilt 2s ease-in-out infinite;transform-origin:center',typing:'animation:typingBounce 0.5s ease-in-out infinite'}[mood]||'';
+  const mouth={idle:'M 9 18 Q 14 20 19 18',happy:'M 8 17 Q 14 22 20 17',thinking:'M 10 19 Q 14 18 18 17',typing:'M 9 18 Q 14 20.5 19 18'}[mood]||'M 9 18 Q 14 20 19 18';
+  const pupilA=mood==='thinking'?'animation:pupilWander 3s ease-in-out infinite':'';
+  return `<svg viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg" style="width:${size}px;height:${size}px;${faceS}">
+    <rect x="1" y="1" width="26" height="26" rx="2" fill="#DBCBBC"/>
+    <g style="transform-origin:9px 12px;${eyeS}"><ellipse cx="9" cy="12" rx="2.2" ry="2.6" fill="#19485C"/><ellipse cx="9" cy="12" rx="1" ry="1.1" fill="#0d2f3b" style="${pupilA}"/></g>
+    <g style="transform-origin:19px 12px;${eyeS}"><ellipse cx="19" cy="12" rx="2.2" ry="2.6" fill="#19485C"/><ellipse cx="19" cy="12" rx="1" ry="1.1" fill="#0d2f3b" style="${pupilA}"/></g>
+    <path d="${mouth}" stroke="#19485C" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+  </svg>`;
+}
+document.getElementById('welcome-bot').innerHTML=botSVG('happy',72);
+
+// ── Navigation ──
+const SCREENS=['home','bank','edu','feed'];
+function go(name){
+  SCREENS.forEach(s=>{const el=document.getElementById('screen-'+s);if(el)el.classList.toggle('active',s===name);});
+  if(name==='edu'&&!window.eduGreeted)initEdu();
+}
+
+// ── Feed filter ──
+function filterCat(cat){
+  document.querySelectorAll('.cat-tab').forEach(t=>t.classList.toggle('active-tab',t.dataset.cat===cat));
+  const cards=document.querySelectorAll('#news-list .article-card');
+  let vis=0;
+  cards.forEach(c=>{const m=cat==='all'||c.dataset.cat===cat;c.classList.toggle('hidden',!m);if(m)vis++;});
+  document.getElementById('empty-state').classList.toggle('visible',vis===0);
+  const lbl={all:'Todo',rates:'Tasas',credit:'Crédito',economy:'Economía'}[cat];
+  document.getElementById('stats-bar').textContent=vis===0?`Sin artículos · ${lbl}`:`${vis} artículo${vis>1?'s':''} · ${lbl!=='Todo'?lbl+' · ':''}ordenados por relevancia local`;
+}
+
+// ── Onboarding ──
+const OB_STEPS=[
+  {screen:'home',targetId:'mc-bank',mood:'happy',title:'Tu Cuenta Bancaria',body:'Aquí ves tu saldo, tus últimos movimientos y tienes acceso a acciones rápidas como enviar dinero o configurar tu tarjeta.'},
+  {screen:'bank',targetId:'ob-balance',mood:'idle',title:'Saldo en tiempo real',body:'Tu saldo disponible siempre visible. El número refleja exactamente cuánto tienes libre en este momento — sin sorpresas.'},
+  {screen:'bank',targetId:'ob-actions',mood:'idle',title:'Acciones rápidas',body:'Envía dinero, recibe transferencias, consulta tu estado de cuenta o bloquea tu tarjeta al instante. Todo desde aquí.'},
+  {screen:'bank',targetId:'ob-txlist',mood:'idle',title:'Últimos movimientos',body:'Cada cargo y depósito en orden cronológico. En verde los ingresos, en gris los egresos.'},
+  {screen:'home',targetId:'mc-edu',mood:'happy',title:'Tu Asesor con IA',body:'Un asesor financiero personalizado que conoce tu saldo, tus gastos y tus acciones — y te da consejos reales, no genéricos.'},
+  {screen:'edu',targetId:'ob-advisor-title',mood:'thinking',title:'Preguntas reales, respuestas reales',body:'Pregúntale cualquier cosa usando tus cifras reales. "¿Cómo invierto mi sobrante?", "¿Gasto demasiado?", lo que necesites.'},
+  {screen:'edu',targetId:'ob-input-row',mood:'happy',title:'Conversación natural',body:'Escribe como si hablaras con un amigo experto. Usa las sugerencias rápidas o escribe lo que quieras.'},
+  {screen:'home',targetId:'mc-news',mood:'idle',title:'EcoNews — Noticias económicas',body:'Noticias sobre tasas de interés, crédito y economía ordenadas por relevancia. Filtra por categoría.'},
+  {screen:'feed',targetId:'ob-cattabs',mood:'idle',title:'Filtra por tema',body:'Toca Tasas, Crédito o Economía para ver solo esas noticias. El contador muestra cuántos artículos hay en cada categoría.'},
+  {screen:'home',targetId:'home-nav',mood:'happy',title:'¡Listo para usar FIE!',body:'Navega con la barra inferior. El asesor IA siempre disponible en "Aprende". ¡Mucho éxito con tus finanzas!'},
+];
+let obStep=0;
+function startTutorial(){document.getElementById('welcome-screen').style.display='none';document.getElementById('ob-overlay').style.display='block';obStep=0;renderStep();}
+function finishOnboarding(){document.getElementById('welcome-screen').style.display='none';document.getElementById('ob-overlay').style.display='none';go('home');}
+function nextStep(){if(obStep>=OB_STEPS.length-1){finishOnboarding();return;}obStep++;renderStep();}
+function renderStep(){
+  const step=OB_STEPS[obStep],isLast=obStep===OB_STEPS.length-1;
+  go(step.screen);
+  document.getElementById('ob-bot').innerHTML=botSVG(step.mood,44);
+  document.getElementById('ob-title').textContent=step.title;
+  document.getElementById('ob-body').textContent=step.body;
+  document.getElementById('ob-btn').textContent=isLast?'¡Empezar! →':'Siguiente →';
+  const dotsEl=document.getElementById('ob-dots');dotsEl.innerHTML='';
+  OB_STEPS.forEach((_,i)=>{const d=document.createElement('div');d.className='ob-dot'+(i===obStep?' active':'');dotsEl.appendChild(d);});
+  const prev=obStep>0?OB_STEPS[obStep-1].screen:null;
+  setTimeout(()=>spotlightEl(step.targetId),step.screen!==prev?380:60);
+}
+function spotlightEl(id){
+  const target=document.getElementById(id),spot=document.getElementById('ob-spotlight');
+  if(!target||!spot)return;
+  const r=target.getBoundingClientRect(),p=8;
+  spot.style.opacity='1';spot.style.left=(r.left-p)+'px';spot.style.top=(r.top-p)+'px';
+  spot.style.width=(r.width+p*2)+'px';spot.style.height=(r.height+p*2)+'px';
+}
+
+// ══════════════════════════════════════════════
+// AI ADVISOR — OpenRouter API
+// ══════════════════════════════════════════════
+const OR_API_KEY = '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';
+const OR_URL = 'https://openrouter.ai/api/v1/chat/completions';
+const OR_MODEL = 'mistralai/mistral-7b-instruct:free';
+
+// System instruction sent once con cada request
+const SYS_INSTRUCTION = `Eres un asesor financiero personal dentro de la app FIE. Eres directo, amable y vas al grano — como un amigo experto en finanzas, no un chatbot corporativo.
+
+PERFIL FINANCIERO REAL DEL USUARIO:
+- Saldo: $47,382.50 MXN
+- Ingreso mensual: $18,500 MXN
+- Gastos recientes: Walmart $843, CFE $364, Rappi $230 (total $1,437)
+- Sobrante estimado: $17,063 MXN
+- Acciones en bolsa: AMXL, BIMBOA, GFNORTEO
+
+REGLAS DE RESPUESTA:
+1. Responde DIRECTAMENTE sin preámbulos como "¡Claro!" o "¡Excelente pregunta!".
+2. Usa las cifras reales del perfil cuando sean relevantes.
+3. Máximo 3-4 oraciones por respuesta. Si necesitan más detalle, el usuario lo pedirá.
+4. Responde preguntas generales de finanzas o economía igual de directo.
+5. Si no puedes hacer algo técnico (transferir dinero, etc.), dilo en una oración y ofrece lo que sí puedes.
+6. Sin disclaimers legales largos. Español mexicano natural. Sin emojis salvo que el usuario los use.`;
+
+// Conversation history en formato OpenAI/OpenRouter: [{role:'user'|'assistant', content:'...'}]
+let chatHistory = [];
+let loading = false;
+let botEls = [];
+
+function setMood(mood){botEls.forEach(el=>{if(el&&el.parentNode)el.innerHTML=botSVG(mood,28);});}
+
+function addMsg(role,text,typing=false){
+  const box=document.getElementById('ai-chat-box');
+  const div=document.createElement('div');
+  div.className='ai-msg'+(role==='user'?' user':'');
+  const av=role==='user'
+    ?`<div class="user-av">👤</div>`
+    :`<div class="fie-bot">${botSVG(typing?'typing':'idle',28)}</div>`;
+  if(typing){
+    div.innerHTML=`${av}<div class="ai-bubble"><div class="ai-typing"><span></span><span></span><span></span></div></div>`;
+    div.id='typing-el';
+  }else{
+    const fmt=text.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
+    div.innerHTML=`${av}<div class="ai-bubble${role==='user'?' user':''}">${fmt}</div>`;
+  }
+  box.appendChild(div);
+  if(role!=='user'){const fe=div.querySelector('.fie-bot');if(fe)botEls.push(fe);}
+  div.scrollIntoView({behavior:'smooth',block:'end'});
+  return div;
+}
+
+async function callOpenRouter(userText){
+  // Agregar turno del usuario al historial
+  chatHistory.push({role:'user', content: userText});
+
+  const messages = [
+    {role:'system', content: SYS_INSTRUCTION},
+    ...chatHistory
+  ];
+
+  const response = await fetch(OR_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${OR_API_KEY}`,
+      'HTTP-Referer': window.location.href,
+      'X-Title': 'FIE Asesor Financiero'
+    },
+    body: JSON.stringify({
+      model: OR_MODEL,
+      messages: messages,
+      max_tokens: 400,
+      temperature: 0.7
+    })
+  });
+
+  if(!response.ok){
+    const err = await response.json().catch(()=>({}));
+    throw new Error(err?.error?.message || `HTTP ${response.status}`);
+  }
+
+  const data = await response.json();
+  const reply = data?.choices?.[0]?.message?.content || 'Sin respuesta.';
+
+  // Agregar respuesta del asistente al historial
+  chatHistory.push({role:'assistant', content: reply});
+
+  return reply;
+}
+
+async function dispatch(text){
+  loading=true;
+  document.getElementById('ai-send-btn').disabled=true;
+  addMsg('user',text);
+  const t=addMsg('bot','',true);
+  setMood('thinking');
+  try{
+    const reply=await callOpenRouter(text);
+    t.remove();addMsg('bot',reply);
+    const happy=/gracias|perfecto|excelente|genial|increíble|wow/i.test(text);
+    setMood(happy?'happy':'idle');
+    if(happy)setTimeout(()=>setMood('idle'),2000);
+  }catch(e){
+    t.remove();
+    addMsg('bot','Error al conectar con el asesor. Verifica tu conexión e intenta de nuevo.');
+    setMood('idle');
+    console.error('[FIE OpenRouter]',e);
+  }
+  loading=false;
+  document.getElementById('ai-send-btn').disabled=false;
+}
+
+function sendMessage(){
+  const inp=document.getElementById('ai-input');
+  const msg=inp.value.trim();
+  if(!msg||loading)return;
+  inp.value='';dispatch(msg);
+}
+
+function sendChip(el,text){
+  if(loading)return;
+  document.getElementById('ai-chips').style.display='none';
+  document.getElementById('chips-label').style.display='none';
+  dispatch(text);
+}
+
+window.eduGreeted=false;
+function initEdu(){
+  window.eduGreeted=true;
+  setTimeout(()=>{
+    addMsg('bot','Hola. Tienes $47,382.50 de saldo y aproximadamente $17,063 libres este periodo. Tus acciones son AMXL, BIMBOA y GFNORTEO. ¿En qué te puedo ayudar hoy?');
+    setMood('idle');
+  },600);
+}
+// ══════════════════════════════════════════════
+
+// ── Offline detection ──
+function updateOnline(){document.body.classList.toggle('offline',!navigator.onLine);}
+window.addEventListener('online',updateOnline);window.addEventListener('offline',updateOnline);updateOnline();
+
+// ── PWA Install ──
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault();deferredPrompt=e;
+  const banner=document.getElementById('install-banner');
+  if(banner){
+    banner.style.display='flex';
+    document.getElementById('install-btn-action').addEventListener('click',async()=>{
+      banner.style.display='none';deferredPrompt.prompt();
+      await deferredPrompt.userChoice;deferredPrompt=null;
+    });
+  }
+});
+window.addEventListener('appinstalled',()=>{document.getElementById('install-banner').style.display='none';});
+
+// ── Service Worker ──
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('sw.js').catch(e=>console.warn('[FIE] SW:',e));
+  });
+}
+</script>
+</body>
+</html>
